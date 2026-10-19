@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Task Manager</title>
+  <!-- Link the CSS stylesheet to style the page -->
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Header Section -->
+    <header class="app-header">
+      <div class="logo-badge">🎓 Study Hub</div>
+      <h1>Student Task Manager</h1>
+      <p class="subtitle">Keep track of homework, projects, and study sessions.</p>
+    </header>
+
+    <!-- Task Input Form -->
+    <form id="task-form" class="task-form">
+      <input 
+        type="text" 
+        id="task-input" 
+        placeholder="e.g. Finish Math Chapter 4 Exercises..." 
+        autocomplete="off"
+        required
+      >
+      <button type="submit" id="add-btn">
+        <span>+ Add Task</span>
+      </button>
+    </form>
+
+    <!-- Task Stats / Overview -->
+    <div class="task-summary">
+      <span id="task-count">0 tasks remaining</span>
+      <span id="completed-count">0 completed</span>
+    </div>
+
+    <!-- Tasks List Container -->
+    <ul id="task-list" class="task-list">
+      <!-- Tasks will be dynamically injected here by script.js -->
+    </ul>
+
+    <!-- Empty State (shown when there are no tasks) -->
+    <div id="empty-state" class="empty-state">
+      <div class="empty-icon">📝</div>
+      <p class="empty-title">All caught up!</p>
+      <p class="empty-subtitle">Add your first assignment or study goal above.</p>
+    </div>
+  </div>
+
+  <!-- Link the JavaScript file to handle interactions and data saving -->
+  <script src="script.js"></script>
+</body>
+</html>
