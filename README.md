@@ -5,7 +5,7 @@ A simple and responsive web application to help students manage their assignment
 
 ## 🚀 Live Demo
 
-[Click here to open the website](YOUR-LIVE-WEBSITE-LINK)
+https://ponnarasan05.github.io/Student-Task-Mangement/
 
 ## ✨ Features
 
