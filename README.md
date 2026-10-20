@@ -1,61 +1,79 @@
+# Student Task Management System
 
-# Student Task Manager 📚
+A simple web application that helps students organize and manage their daily academic tasks.
 
-A simple and responsive web application to help students manage their assignments, projects, and study goals.
-
-## 🚀 Live Demo
-
-https://ponnarasan05.github.io/Student-Task-Mangement/
-
-## ✨ Features
+## Features
 
 - Add new tasks
 - View all tasks
 - Mark tasks as completed
 - Delete tasks
-- Save tasks using browser Local Storage
-- Responsive and user-friendly interface
+- Store task data using a backend database
+- Simple and user-friendly interface
 
-## 🛠️ Technologies Used
+## Technologies Used
 
-- HTML5
-- CSS3
+**Frontend**
+- HTML
+- CSS
 - JavaScript
-- Browser Local Storage
 
-## 📂 Project Structure
+**Backend**
+- Python
+- Flask
+- Flask-CORS
+
+**Database**
+- SQLite
+
+**Deployment**
+- GitHub Pages (Frontend)
+- Render (Backend)
+
+## Project Structure
 
 ```text
-StudentTaskManager/
+Student-Task-Management/
 ├── index.html
 ├── style.css
-└── script.js
+├── script.js
+├── app.py
+├── requirements.txt
+├── tasks.db
+└── README.md
 ```
 
-## 💻 How to Run Locally
+## How to Run Locally
 
-1. Clone or download this repository.
-2. Open the project folder.
-3. Open `index.html` in your web browser.
-4. Start adding and managing your tasks.
+1. Clone this repository.
+2. Install the required packages:
 
-No backend or database is required for this version.
+   ```bash
+   python -m pip install -r requirements.txt
+   ```
 
-## 🎯 Learning Outcomes
+3. Start the Flask backend:
 
-- Learned basic frontend development.
-- Practised HTML, CSS, and JavaScript integration.
-- Used browser Local Storage to save tasks.
-- Learned to manage project files using Git and GitHub.
+   ```bash
+   python app.py
+   ```
 
-## 👨‍💻 Author
+4. Open `index.html` in your browser or use a local development server.
 
-Ponnarasan A
+## Live Demo
 
-## 📄 License
+Link : https://ponnarasan05.github.io/Student-Task-Mangement/
 
-This project was created for learning and educational purposes.
+## Future Improvements
 
+- User login and registration
+- Task deadlines and reminders
+- Task priority levels
+- Improved mobile-friendly design
 
+## Author
 
-https://ponnarasan05.github.io/Student-Task-Mangement/
+**Ponnarasan A**
+
+GitHub: https://github.com/Ponnarasan05
+
