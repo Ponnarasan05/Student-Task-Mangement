@@ -1,11 +1,10 @@
-
-const API_URL = "http://127.0.0.1:5000/api/tasks";
-
+const API_URL = "https://student-task-mangement-vimy.onrender.com/api/tasks";
 const taskForm = document.getElementById("task-form");
 const taskInput = document.getElementById("task-input");
 const taskList = document.getElementById("task-list");
 const emptyState = document.getElementById("empty-state");
 const taskCount = document.getElementById("task-count");
+
 const completedCount = document.getElementById("completed-count");
 
 let tasks = [];
