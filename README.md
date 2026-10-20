@@ -79,5 +79,3 @@ Backend: Add your Render service URL here.
 
 GitHub: https://github.com/Ponnarasan05
 
-Link:
-https://ponnarasan05.github.io/Student-Task-Mangement/
