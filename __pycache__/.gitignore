@@ -1,0 +1,8 @@
+tasks.db
+tasks.db-*
+*.db
+*.db-*
+__pycache__/
+.env
+tasks.db.backup*
+
