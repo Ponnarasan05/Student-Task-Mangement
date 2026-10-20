@@ -62,9 +62,7 @@ Student-Task-Management/
 
 ## Live Demo
 
-Frontend: https://ponnarasan05.github.io/Student-Task-Management/
-
-Backend: Add your Render service URL here.
+Link : https://ponnarasan05.github.io/Student-Task-Mangement/
 
 ## Future Improvements
 
