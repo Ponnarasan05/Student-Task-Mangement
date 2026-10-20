@@ -8,7 +8,7 @@
 // ============================================================
 // For Local Testing: "http://127.0.0.1:5000"
 // For Render Production Deployment: "https://student-task-management-vimy.onrender.com"
-const API_BASE_URL = "https://student-task-management-vimy.onrender.com";
+const API_BASE_URL = "https://student-task-management-vimy-cqgq.onrender.com";
 const TASKS_ENDPOINT = `${API_BASE_URL}/api/tasks`;
 const AUTH_ENDPOINT = `${API_BASE_URL}/api`;
 
