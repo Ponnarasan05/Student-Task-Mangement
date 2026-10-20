@@ -1002,3 +1002,439 @@ kbd {
     max-width: 100%;
   }
 }
+
+/* ============================================================
+   Authentication UI (Navigation States & Responsive Modal)
+   ============================================================ */
+
+/* Auth Navigation Area */
+.auth-nav-container {
+  display: inline-flex;
+  align-items: center;
+}
+
+.auth-logged-out {
+  display: inline-flex;
+  align-items: center;
+}
+
+.auth-logged-in {
+  display: none;
+  align-items: center;
+  gap: 8px;
+}
+
+/* When .logged-in is applied to container (or [data-auth-state="logged-in"]) */
+.auth-nav-container.logged-in .auth-logged-out {
+  display: none;
+}
+
+.auth-nav-container.logged-in .auth-logged-in {
+  display: inline-flex;
+}
+
+/* Sign In Trigger Button */
+.btn-auth-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: var(--primary-soft);
+  color: var(--primary);
+  border: 1px solid var(--primary-border);
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: var(--radius-pill);
+  text-decoration: none;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  box-shadow: 0 1px 2px rgba(79, 70, 229, 0.05);
+}
+
+.btn-auth-trigger:hover,
+.btn-auth-trigger:focus-visible {
+  background-color: var(--primary);
+  color: #ffffff;
+  border-color: var(--primary);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(79, 70, 229, 0.2);
+}
+
+.btn-auth-trigger:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-glow);
+}
+
+.auth-btn-icon {
+  width: 14px;
+  height: 14px;
+}
+
+/* User Profile Badge (Logged In State) */
+.user-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: #f1f5f9;
+  border: 1px solid var(--border-color);
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.user-avatar-icon {
+  font-size: 0.9rem;
+}
+
+.user-display-name {
+  max-width: 130px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Logout Button */
+.btn-logout {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background-color: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+  font-size: 0.775rem;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.btn-logout:hover,
+.btn-logout:focus-visible {
+  color: var(--danger);
+  background-color: var(--danger-soft);
+  border-color: var(--danger-border);
+}
+
+.btn-logout:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-danger-glow);
+}
+
+.logout-icon {
+  width: 13px;
+  height: 13px;
+}
+
+/* Auth Modal Overlay */
+.auth-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background-color: rgba(15, 23, 42, 0.5);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity var(--transition-base), visibility var(--transition-base);
+}
+
+/* Modal Open States (supports both :target anchor navigation and .open JS class) */
+.auth-modal-overlay:target,
+.auth-modal-overlay.open {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+/* Modal Card */
+.auth-modal-card {
+  position: relative;
+  background-color: var(--card-bg);
+  width: 100%;
+  max-width: 420px;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-container);
+  padding: 32px 28px;
+  transform: scale(0.95) translateY(8px);
+  transition: transform var(--transition-base);
+}
+
+.auth-modal-overlay:target .auth-modal-card,
+.auth-modal-overlay.open .auth-modal-card {
+  transform: scale(1) translateY(0);
+}
+
+/* Modal Close Button */
+.auth-modal-close {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: var(--text-muted);
+  text-decoration: none;
+  font-size: 1.5rem;
+  line-height: 1;
+  border: 1px solid transparent;
+  transition: all var(--transition-fast);
+}
+
+.auth-modal-close:hover,
+.auth-modal-close:focus-visible {
+  color: var(--text-main);
+  background-color: var(--surface-hover);
+  border-color: var(--border-color);
+}
+
+.auth-modal-close:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-glow);
+}
+
+/* Modal Header */
+.auth-modal-header {
+  text-align: center;
+  margin-bottom: 22px;
+}
+
+.auth-icon-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  font-size: 1.5rem;
+  border-radius: 50%;
+  background-color: var(--primary-soft);
+  border: 1px solid var(--primary-border);
+  margin-bottom: 12px;
+}
+
+.auth-modal-title {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--text-main);
+  letter-spacing: -0.02em;
+  margin-bottom: 6px;
+}
+
+.auth-modal-subtitle {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  line-height: 1.45;
+}
+
+/* Tabs */
+.auth-tabs {
+  display: flex;
+  background-color: var(--surface-subtle);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-pill);
+  padding: 4px;
+  margin-bottom: 22px;
+  gap: 4px;
+}
+
+.auth-tab {
+  flex: 1;
+  border: none;
+  background: transparent;
+  padding: 8px 14px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  text-align: center;
+}
+
+.auth-tab.active,
+.auth-tab[aria-selected="true"] {
+  background-color: var(--card-bg);
+  color: var(--primary);
+  box-shadow: var(--shadow-card);
+}
+
+.auth-tab:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-glow);
+}
+
+/* Form Styles */
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: left;
+}
+
+.field-label {
+  font-size: 0.825rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.auth-input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background-color: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 0 12px;
+  transition: all var(--transition-fast);
+}
+
+.auth-input-wrap:focus-within {
+  border-color: var(--primary-light);
+  box-shadow: var(--shadow-glow);
+}
+
+.field-icon {
+  width: 17px;
+  height: 17px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+  margin-right: 8px;
+}
+
+.auth-input {
+  width: 100%;
+  padding: 11px 0;
+  border: none;
+  background: transparent;
+  font-family: inherit;
+  font-size: 0.9rem;
+  color: var(--text-main);
+}
+
+.auth-input:focus {
+  outline: none;
+}
+
+.auth-input::placeholder {
+  color: var(--text-muted);
+}
+
+/* Error Banner */
+.auth-error-banner {
+  background-color: var(--danger-soft);
+  border: 1px solid var(--danger-border);
+  color: var(--danger);
+  font-size: 0.825rem;
+  font-weight: 500;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Submit Button */
+.auth-submit-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  padding: 12px;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-hover) 100%);
+  color: #ffffff;
+  border: none;
+  border-radius: var(--radius-md);
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+  transition: all var(--transition-fast);
+  margin-top: 4px;
+}
+
+.auth-submit-btn:hover,
+.auth-submit-btn:focus-visible {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(79, 70, 229, 0.35);
+}
+
+.auth-submit-btn:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-glow);
+}
+
+/* Footer Switch Links */
+.auth-footer-prompt {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 0.825rem;
+  color: var(--text-secondary);
+  margin-top: 18px;
+}
+
+.auth-switch-link {
+  background: none;
+  border: none;
+  color: var(--primary);
+  font-family: inherit;
+  font-size: 0.825rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color var(--transition-fast);
+}
+
+.auth-switch-link:hover,
+.auth-switch-link:focus-visible {
+  color: var(--primary-hover);
+}
+
+.auth-switch-link:focus-visible {
+  outline: 2px solid var(--primary-light);
+  border-radius: 2px;
+}
+
+/* Demo Notice */
+.auth-demo-notice {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--border-color);
+  font-size: 0.725rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+/* Mobile Media Queries for Auth UI */
+@media (max-width: 520px) {
+  .auth-modal-card {
+    padding: 24px 20px;
+  }
+
+  .auth-nav-container {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+

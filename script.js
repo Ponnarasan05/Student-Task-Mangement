@@ -1,21 +1,34 @@
 /**
  * Student Task Manager - Frontend Controller
- * Connects seamlessly with the Flask / SQLite API
+ * Connects securely with the Flask / SQLite API using JWT authentication
  */
 
-// Keep exact backend API endpoint intact
-const API_URL = "https://student-task-mangement-vimy.onrender.com/api/tasks";
+// ============================================================
+// 1. Backend Configuration
+// ============================================================
+// For Local Testing: "http://127.0.0.1:5000"
+// For Render Production Deployment: "https://student-task-management-vimy.onrender.com"
+const API_BASE_URL = "https://student-task-management-vimy.onrender.com";
+const TASKS_ENDPOINT = `${API_BASE_URL}/api/tasks`;
+const AUTH_ENDPOINT = `${API_BASE_URL}/api`;
 
-// Core DOM Elements (Preserving all original IDs)
+// Storage Keys (sessionStorage ensures tokens clear when the tab closes)
+const TOKEN_KEY = "stm_token";
+const USERNAME_KEY = "stm_username";
+
+// ============================================================
+// 2. DOM Elements
+// ============================================================
+// Core Task Dashboard Elements
 const taskForm = document.getElementById("task-form");
 const taskInput = document.getElementById("task-input");
 const taskList = document.getElementById("task-list");
 const emptyState = document.getElementById("empty-state");
+const emptyTitle = document.getElementById("empty-title");
+const emptySubtitle = document.getElementById("empty-subtitle");
 const taskCount = document.getElementById("task-count");
 const completedCount = document.getElementById("completed-count");
 const addBtn = document.getElementById("add-btn");
-
-// Extended UI Elements for Modern Dashboard Experience
 const progressRate = document.getElementById("progress-rate");
 const progressFill = document.getElementById("progress-fill");
 const filterAllBadge = document.getElementById("filter-all-badge");
@@ -25,16 +38,333 @@ const searchInput = document.getElementById("search-input");
 const currentDateEl = document.getElementById("current-date");
 const statusLabel = document.getElementById("status-label");
 const syncStatus = document.getElementById("sync-status");
-const emptyTitle = document.getElementById("empty-title");
-const emptySubtitle = document.getElementById("empty-subtitle");
 const toastContainer = document.getElementById("toast-container");
+
+// Auth Navigation Elements
+const authNavContainer = document.getElementById("auth-nav-container");
+const btnOpenLogin = document.getElementById("btn-open-login");
+const userDisplayName = document.getElementById("user-display-name");
+const btnLogout = document.getElementById("btn-logout");
+
+// Auth Modal & Form Elements
+const authModal = document.getElementById("auth-modal");
+const authModalClose = document.getElementById("auth-modal-close");
+const tabLogin = document.getElementById("tab-login");
+const tabRegister = document.getElementById("tab-register");
+const loginPanel = document.getElementById("login-panel");
+const registerPanel = document.getElementById("register-panel");
+const loginForm = document.getElementById("login-form");
+const registerForm = document.getElementById("register-form");
+const loginUsernameInput = document.getElementById("login-username");
+const loginPasswordInput = document.getElementById("login-password");
+const registerUsernameInput = document.getElementById("register-username");
+const registerPasswordInput = document.getElementById("register-password");
+const loginErrorBanner = document.getElementById("login-error-banner");
+const registerErrorBanner = document.getElementById("register-error-banner");
+const loginSubmitBtn = document.getElementById("login-submit-btn");
+const registerSubmitBtn = document.getElementById("register-submit-btn");
+const switchToRegister = document.getElementById("switch-to-register");
+const switchToLogin = document.getElementById("switch-to-login");
 
 // State
 let tasks = [];
 let currentFilter = "all"; // 'all' | 'active' | 'completed'
 let searchQuery = "";
+let isSubmitting = false;
 
-// 1. Format and display today's date
+// ============================================================
+// 3. JWT & Session Management (sessionStorage)
+// ============================================================
+function getAuthToken() {
+  return sessionStorage.getItem(TOKEN_KEY);
+}
+
+function setAuthSession(token, username) {
+  if (token) {
+    sessionStorage.setItem(TOKEN_KEY, token);
+  }
+  if (username) {
+    sessionStorage.setItem(USERNAME_KEY, username);
+  }
+}
+
+function clearAuthSession() {
+  sessionStorage.removeItem(TOKEN_KEY);
+  sessionStorage.removeItem(USERNAME_KEY);
+}
+
+function isAuthenticated() {
+  return Boolean(getAuthToken());
+}
+
+// ============================================================
+// 4. UI State & Navigation Controller
+// ============================================================
+function updateAuthUI(isLoggedIn, username = "") {
+  if (authNavContainer) {
+    if (isLoggedIn) {
+      authNavContainer.classList.add("logged-in");
+    } else {
+      authNavContainer.classList.remove("logged-in");
+    }
+  }
+
+  if (userDisplayName) {
+    userDisplayName.textContent = username || "Student";
+  }
+
+  // Manage task input readiness
+  if (taskInput) {
+    taskInput.disabled = !isLoggedIn;
+    taskInput.placeholder = isLoggedIn
+      ? "e.g. Finish Math Chapter 4 Exercises..."
+      : "Please sign in above to add personal tasks...";
+  }
+  if (addBtn) {
+    addBtn.disabled = !isLoggedIn;
+  }
+}
+
+function openAuthModal(mode = "login") {
+  if (!authModal) return;
+  clearAuthErrors();
+  switchAuthTab(mode);
+  authModal.classList.add("open");
+
+  // Keyboard accessibility: focus on first active input
+  setTimeout(() => {
+    if (mode === "login" && loginUsernameInput) {
+      loginUsernameInput.focus();
+    } else if (mode === "register" && registerUsernameInput) {
+      registerUsernameInput.focus();
+    }
+  }, 100);
+}
+
+function closeAuthModal() {
+  if (!authModal) return;
+  authModal.classList.remove("open");
+  if (window.location.hash === "#auth-modal") {
+    history.replaceState(null, "", window.location.pathname + window.location.search);
+  }
+  clearAuthErrors();
+}
+
+function switchAuthTab(mode) {
+  clearAuthErrors();
+  const isLogin = mode === "login";
+
+  if (tabLogin) {
+    tabLogin.classList.toggle("active", isLogin);
+    tabLogin.setAttribute("aria-selected", isLogin ? "true" : "false");
+  }
+  if (tabRegister) {
+    tabRegister.classList.toggle("active", !isLogin);
+    tabRegister.setAttribute("aria-selected", !isLogin ? "true" : "false");
+  }
+
+  if (loginPanel) {
+    loginPanel.classList.toggle("active", isLogin);
+    loginPanel.hidden = !isLogin;
+  }
+  if (registerPanel) {
+    registerPanel.classList.toggle("active", !isLogin);
+    registerPanel.hidden = isLogin;
+  }
+
+  if (isLogin && loginUsernameInput) {
+    loginUsernameInput.focus();
+  } else if (!isLogin && registerUsernameInput) {
+    registerUsernameInput.focus();
+  }
+}
+
+function showAuthError(panel, message) {
+  const banner = panel === "login" ? loginErrorBanner : registerErrorBanner;
+  if (!banner) return;
+  banner.textContent = message;
+  banner.hidden = false;
+}
+
+function clearAuthErrors() {
+  if (loginErrorBanner) {
+    loginErrorBanner.textContent = "";
+    loginErrorBanner.hidden = true;
+  }
+  if (registerErrorBanner) {
+    registerErrorBanner.textContent = "";
+    registerErrorBanner.hidden = true;
+  }
+}
+
+// ============================================================
+// 5. Authenticated Fetch Helper
+// ============================================================
+async function authFetch(url, options = {}) {
+  const token = getAuthToken();
+  if (!token) {
+    handleUnauthorized("Please sign in to view and manage tasks.");
+    throw new Error("Unauthorized: No token in session");
+  }
+
+  const headers = {
+    "Authorization": `Bearer ${token}`,
+    ...(options.headers || {})
+  };
+
+  if (options.body && !headers["Content-Type"]) {
+    headers["Content-Type"] = "application/json";
+  }
+
+  let response;
+  try {
+    response = await fetch(url, { ...options, headers });
+  } catch (networkError) {
+    console.error("Network error during request:", networkError);
+    setSyncStatus("offline", "Offline");
+    throw new Error("Unable to connect to backend. Please ensure Flask is running.");
+  }
+
+  if (response.status === 401) {
+    handleUnauthorized("Your session has expired or is invalid. Please sign in again.");
+    throw new Error("Unauthorized: Invalid session");
+  }
+
+  return response;
+}
+
+function handleUnauthorized(message) {
+  clearAuthSession();
+  updateAuthUI(false);
+  tasks = [];
+  renderTasks();
+  showToast(message, "error");
+  openAuthModal("login");
+}
+
+// ============================================================
+// 6. Registration, Login & Logout Handlers
+// ============================================================
+async function handleLogin(event) {
+  event.preventDefault();
+  clearAuthErrors();
+
+  const username = loginUsernameInput ? loginUsernameInput.value.trim() : "";
+  const password = loginPasswordInput ? loginPasswordInput.value : "";
+
+  if (!username || !password) {
+    showAuthError("login", "Please provide both username and password.");
+    return;
+  }
+
+  const originalBtnHTML = loginSubmitBtn.innerHTML;
+  loginSubmitBtn.disabled = true;
+  loginSubmitBtn.innerHTML = `<span>Signing in...</span>`;
+
+  try {
+    const response = await fetch(`${AUTH_ENDPOINT}/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password })
+    });
+
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      const errorMsg = data.error || `Login failed (${response.status})`;
+      showAuthError("login", errorMsg);
+      return;
+    }
+
+    // Success: store in sessionStorage (clears on tab close)
+    setAuthSession(data.token, data.user.username);
+    updateAuthUI(true, data.user.username);
+    closeAuthModal();
+
+    if (loginForm) loginForm.reset();
+    showToast(`Welcome back, ${data.user.username}!`, "success");
+
+    await loadTasks();
+  } catch (error) {
+    console.error("Login request failed:", error);
+    showAuthError("login", "Network error. Make sure the local Flask server is running.");
+  } finally {
+    loginSubmitBtn.disabled = false;
+    loginSubmitBtn.innerHTML = originalBtnHTML;
+  }
+}
+
+async function handleRegister(event) {
+  event.preventDefault();
+  clearAuthErrors();
+
+  const username = registerUsernameInput ? registerUsernameInput.value.trim() : "";
+  const password = registerPasswordInput ? registerPasswordInput.value : "";
+
+  if (!username || !password) {
+    showAuthError("register", "Please fill in all registration fields.");
+    return;
+  }
+
+  if (username.length < 3 || username.length > 50) {
+    showAuthError("register", "Username must be between 3 and 50 characters.");
+    return;
+  }
+
+  if (password.length < 6 || password.length > 128) {
+    showAuthError("register", "Password must be at least 6 characters.");
+    return;
+  }
+
+  const originalBtnHTML = registerSubmitBtn.innerHTML;
+  registerSubmitBtn.disabled = true;
+  registerSubmitBtn.innerHTML = `<span>Creating account...</span>`;
+
+  try {
+    const response = await fetch(`${AUTH_ENDPOINT}/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password })
+    });
+
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      const errorMsg = data.error || `Registration failed (${response.status})`;
+      showAuthError("register", errorMsg);
+      return;
+    }
+
+    // Success: store in sessionStorage
+    setAuthSession(data.token, data.user.username);
+    updateAuthUI(true, data.user.username);
+    closeAuthModal();
+
+    if (registerForm) registerForm.reset();
+    showToast(`Account created! Welcome, ${data.user.username}! 🎉`, "success");
+
+    await loadTasks();
+  } catch (error) {
+    console.error("Registration request failed:", error);
+    showAuthError("register", "Network error. Make sure the local Flask server is running.");
+  } finally {
+    registerSubmitBtn.disabled = false;
+    registerSubmitBtn.innerHTML = originalBtnHTML;
+  }
+}
+
+function handleLogout() {
+  clearAuthSession();
+  updateAuthUI(false);
+  tasks = [];
+  renderTasks();
+  setSyncStatus("offline", "Signed Out");
+  showToast("You have been signed out.", "info");
+}
+
+// ============================================================
+// 7. Date Display & Toast Notification Helpers
+// ============================================================
 function initDateDisplay() {
   if (!currentDateEl) return;
   try {
@@ -46,16 +376,21 @@ function initDateDisplay() {
   }
 }
 
-// 2. Toast Notification Helper
 function showToast(message, type = "info") {
   if (!toastContainer) return;
 
   const toast = document.createElement("div");
   toast.className = `toast toast-${type}`;
-  
-  const icon = type === "success" ? "✓" : type === "error" ? "⚠️" : "ℹ️";
-  toast.innerHTML = `<span class="toast-icon">${icon}</span><span>${escapeHtml(message)}</span>`;
-  
+
+  const iconSpan = document.createElement("span");
+  iconSpan.className = "toast-icon";
+  iconSpan.textContent = type === "success" ? "✓" : type === "error" ? "⚠️" : "ℹ️";
+
+  const textSpan = document.createElement("span");
+  textSpan.textContent = message;
+
+  toast.appendChild(iconSpan);
+  toast.appendChild(textSpan);
   toastContainer.appendChild(toast);
 
   setTimeout(() => {
@@ -64,22 +399,10 @@ function showToast(message, type = "info") {
   }, 3200);
 }
 
-// Helper to escape HTML characters
-function escapeHtml(str) {
-  if (!str) return "";
-  return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
-}
-
-// 3. Update sync status indicator
 function setSyncStatus(status, text) {
   if (!statusLabel || !syncStatus) return;
   statusLabel.textContent = text;
-  
+
   if (status === "syncing") {
     syncStatus.style.backgroundColor = "var(--primary-soft)";
     syncStatus.style.borderColor = "var(--primary-border)";
@@ -95,12 +418,20 @@ function setSyncStatus(status, text) {
   }
 }
 
-// 4. GET: Load tasks from the Flask backend
+// ============================================================
+// 8. User-Scoped Task Operations
+// ============================================================
 async function loadTasks() {
+  if (!isAuthenticated()) {
+    tasks = [];
+    renderTasks();
+    setSyncStatus("offline", "Signed Out");
+    return;
+  }
+
   setSyncStatus("syncing", "Syncing...");
   try {
-    const response = await fetch(API_URL);
-
+    const response = await authFetch(TASKS_ENDPOINT);
     if (!response.ok) {
       throw new Error(`Server returned ${response.status}`);
     }
@@ -115,28 +446,105 @@ async function loadTasks() {
     renderTasks();
   } catch (error) {
     console.error("Loading tasks failed:", error);
-    setSyncStatus("offline", "Offline");
-    showToast("Backend may be waking up (free cloud tier). Retrying in background...", "error");
+    setSyncStatus("offline", "Error");
     renderTasks();
   }
 }
 
-// 5. Update task counters & visual progress bar
+async function addTask(title) {
+  if (!isAuthenticated()) {
+    showToast("Please sign in to add tasks.", "error");
+    openAuthModal("login");
+    return;
+  }
+
+  setSyncStatus("syncing", "Saving...");
+  try {
+    const response = await authFetch(TASKS_ENDPOINT, {
+      method: "POST",
+      body: JSON.stringify({ title })
+    });
+
+    if (!response.ok) {
+      const errData = await response.json().catch(() => ({}));
+      throw new Error(errData.error || `Could not add task (${response.status})`);
+    }
+
+    showToast("Task added successfully!", "success");
+    await loadTasks();
+  } catch (error) {
+    console.error("Adding task failed:", error);
+    setSyncStatus("offline", "Error");
+    showToast(error.message || "Could not add task.", "error");
+  }
+}
+
+async function toggleTask(id) {
+  const task = tasks.find(t => t.id === id);
+  if (!task) return;
+
+  const nextState = !task.completed;
+  setSyncStatus("syncing", "Updating...");
+
+  try {
+    const response = await authFetch(`${TASKS_ENDPOINT}/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ completed: nextState })
+    });
+
+    if (!response.ok) {
+      const errData = await response.json().catch(() => ({}));
+      throw new Error(errData.error || `Could not update task (${response.status})`);
+    }
+
+    showToast(nextState ? "Task completed! 🎉" : "Task marked in progress", "info");
+    await loadTasks();
+  } catch (error) {
+    console.error("Updating task failed:", error);
+    setSyncStatus("offline", "Error");
+    showToast(error.message || "Could not update task.", "error");
+  }
+}
+
+async function deleteTask(id) {
+  const task = tasks.find(t => t.id === id);
+  const taskName = task ? task.title : "Task";
+
+  setSyncStatus("syncing", "Deleting...");
+  try {
+    const response = await authFetch(`${TASKS_ENDPOINT}/${id}`, {
+      method: "DELETE"
+    });
+
+    if (!response.ok) {
+      const errData = await response.json().catch(() => ({}));
+      throw new Error(errData.error || `Could not delete task (${response.status})`);
+    }
+
+    showToast(`Removed "${taskName.length > 25 ? taskName.slice(0, 22) + "..." : taskName}"`, "info");
+    await loadTasks();
+  } catch (error) {
+    console.error("Deleting task failed:", error);
+    setSyncStatus("offline", "Error");
+    showToast(error.message || "Could not delete task.", "error");
+  }
+}
+
+// ============================================================
+// 9. Task Rendering & Stats
+// ============================================================
 function updateStats() {
   const total = tasks.length;
   const completed = tasks.filter(task => task.completed).length;
   const remaining = total - completed;
   const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
 
-  // Preserve exact legacy format
   if (taskCount) {
     taskCount.textContent = `${remaining} ${remaining === 1 ? "task" : "tasks"} remaining`;
   }
   if (completedCount) {
     completedCount.textContent = `${completed} completed`;
   }
-
-  // Modern dashboard extensions
   if (progressRate) {
     progressRate.textContent = `${percentage}%`;
   }
@@ -149,25 +557,27 @@ function updateStats() {
   if (filterCompletedBadge) filterCompletedBadge.textContent = completed;
 }
 
-// 6. Display tasks based on active filter and search query
 function renderTasks() {
   taskList.innerHTML = "";
 
-  // Apply filter & search
+  if (!isAuthenticated()) {
+    emptyState.classList.add("visible");
+    if (emptyTitle) emptyTitle.textContent = "Sign in to manage your tasks";
+    if (emptySubtitle) emptySubtitle.textContent = "Your coursework and personal study goals are safely isolated to your account.";
+    updateStats();
+    return;
+  }
+
   const filtered = tasks.filter(task => {
-    // Status filter
     if (currentFilter === "active" && task.completed) return false;
     if (currentFilter === "completed" && !task.completed) return false;
 
-    // Search query filter
     if (searchQuery.trim() !== "") {
       return task.title.toLowerCase().includes(searchQuery.toLowerCase());
     }
-
     return true;
   });
 
-  // Handle empty states with helpful messaging
   const isListEmpty = filtered.length === 0;
   emptyState.classList.toggle("visible", isListEmpty);
 
@@ -187,17 +597,15 @@ function renderTasks() {
     }
   }
 
-  // Populate task cards
   filtered.forEach(task => {
     const li = document.createElement("li");
     li.className = `task-item ${task.completed ? "completed" : ""}`;
     li.setAttribute("data-id", task.id);
 
-    // Left Section: Custom Accessible Checkbox + Task Text
+    // Left Section: Checkbox + Safe Task Title
     const leftDiv = document.createElement("div");
     leftDiv.className = "task-left";
 
-    // Custom Styled Checkbox Container
     const checkboxLabel = document.createElement("label");
     checkboxLabel.className = "checkbox-container";
     checkboxLabel.setAttribute("title", task.completed ? "Mark incomplete" : "Mark completed");
@@ -219,10 +627,10 @@ function renderTasks() {
 
     checkboxLabel.append(checkbox, customCheckmark);
 
-    // Title Span inside a wrapper
     const contentDiv = document.createElement("div");
     contentDiv.className = "task-content";
 
+    // Safe DOM API: textContent prevents XSS injection
     const titleSpan = document.createElement("span");
     titleSpan.className = "task-text";
     titleSpan.textContent = task.title;
@@ -231,7 +639,7 @@ function renderTasks() {
     contentDiv.appendChild(titleSpan);
     leftDiv.append(checkboxLabel, contentDiv);
 
-    // Actions: Delete Button with sleek SVG
+    // Right Section: Delete Action
     const actionsDiv = document.createElement("div");
     actionsDiv.className = "task-actions";
 
@@ -257,105 +665,44 @@ function renderTasks() {
   updateStats();
 }
 
-// 7. POST: Add a task to the database
-async function addTask(title) {
-  setSyncStatus("syncing", "Saving...");
-  try {
-    const response = await fetch(API_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title })
-    });
+// ============================================================
+// 10. Event Listeners & Interactive Handlers
+// ============================================================
+// Add Task Form Submission
+if (taskForm) {
+  taskForm.addEventListener("submit", async event => {
+    event.preventDefault();
+    if (isSubmitting) return;
 
-    if (!response.ok) {
-      throw new Error(`Could not add task (${response.status})`);
+    const title = taskInput.value.trim();
+    if (!title) return;
+
+    if (!isAuthenticated()) {
+      showToast("Please sign in to add tasks.", "error");
+      openAuthModal("login");
+      return;
     }
 
-    showToast("Task added successfully!", "success");
-    await loadTasks();
-  } catch (error) {
-    console.error("Adding task failed:", error);
-    setSyncStatus("offline", "Error");
-    showToast("Could not add task. Check that the backend is running.", "error");
-  }
-}
+    isSubmitting = true;
+    taskInput.disabled = true;
+    const originalBtnHTML = addBtn.innerHTML;
+    addBtn.disabled = true;
+    addBtn.innerHTML = `<span>Adding...</span>`;
 
-// 8. PATCH: Change task completion status
-async function toggleTask(id) {
-  const task = tasks.find(t => t.id === id);
-  if (!task) return;
-
-  const nextState = !task.completed;
-  setSyncStatus("syncing", "Updating...");
-
-  try {
-    const response = await fetch(`${API_URL}/${id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ completed: nextState })
-    });
-
-    if (!response.ok) {
-      throw new Error(`Could not update task (${response.status})`);
+    try {
+      await addTask(title);
+      taskInput.value = "";
+    } finally {
+      isSubmitting = false;
+      taskInput.disabled = false;
+      addBtn.disabled = false;
+      addBtn.innerHTML = originalBtnHTML;
+      taskInput.focus();
     }
-
-    showToast(nextState ? "Task completed! 🎉" : "Task marked in progress", "info");
-    await loadTasks();
-  } catch (error) {
-    console.error("Updating task failed:", error);
-    setSyncStatus("offline", "Error");
-    showToast("Could not update task. Please try again.", "error");
-  }
+  });
 }
 
-// 9. DELETE: Remove a task from the database
-async function deleteTask(id) {
-  const task = tasks.find(t => t.id === id);
-  const taskName = task ? task.title : "Task";
-
-  setSyncStatus("syncing", "Deleting...");
-  try {
-    const response = await fetch(`${API_URL}/${id}`, {
-      method: "DELETE"
-    });
-
-    if (!response.ok) {
-      throw new Error(`Could not delete task (${response.status})`);
-    }
-
-    showToast(`Removed "${taskName.length > 25 ? taskName.slice(0, 22) + "..." : taskName}"`, "info");
-    await loadTasks();
-  } catch (error) {
-    console.error("Deleting task failed:", error);
-    setSyncStatus("offline", "Error");
-    showToast("Could not delete task. Please try again.", "error");
-  }
-}
-
-// 10. Handle Form Submission
-taskForm.addEventListener("submit", async event => {
-  event.preventDefault();
-
-  const title = taskInput.value.trim();
-  if (!title) return;
-
-  taskInput.disabled = true;
-  const originalBtnHTML = addBtn.innerHTML;
-  addBtn.disabled = true;
-  addBtn.innerHTML = `<span>Adding...</span>`;
-
-  try {
-    await addTask(title);
-    taskInput.value = "";
-  } finally {
-    taskInput.disabled = false;
-    addBtn.disabled = false;
-    addBtn.innerHTML = originalBtnHTML;
-    taskInput.focus();
-  }
-});
-
-// 11. Interactive Filter Tabs
+// Filter Tabs
 document.querySelectorAll(".filter-tab").forEach(tab => {
   tab.addEventListener("click", () => {
     document.querySelectorAll(".filter-tab").forEach(t => {
@@ -369,7 +716,7 @@ document.querySelectorAll(".filter-tab").forEach(tab => {
   });
 });
 
-// 12. Instant Search Filter
+// Search Filter
 if (searchInput) {
   searchInput.addEventListener("input", (e) => {
     searchQuery = e.target.value;
@@ -377,7 +724,7 @@ if (searchInput) {
   });
 }
 
-// 13. Quick Suggestion Chips Handlers
+// Quick Suggestion Chips
 document.querySelectorAll(".suggestion-chip").forEach(chip => {
   chip.addEventListener("click", () => {
     const sampleTask = chip.getAttribute("data-task");
@@ -388,6 +735,112 @@ document.querySelectorAll(".suggestion-chip").forEach(chip => {
   });
 });
 
-// 14. Initialize Application
-initDateDisplay();
-loadTasks();
+// Modal Open Trigger
+if (btnOpenLogin) {
+  btnOpenLogin.addEventListener("click", (e) => {
+    e.preventDefault();
+    openAuthModal("login");
+  });
+}
+
+// Modal Close Button
+if (authModalClose) {
+  authModalClose.addEventListener("click", (e) => {
+    e.preventDefault();
+    closeAuthModal();
+  });
+}
+
+// Close Modal on Outside Backdrop Click
+if (authModal) {
+  authModal.addEventListener("click", (e) => {
+    if (e.target === authModal) {
+      closeAuthModal();
+    }
+  });
+}
+
+// Close Modal on Escape Key
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && authModal && authModal.classList.contains("open")) {
+    closeAuthModal();
+  }
+});
+
+// Tab Switching
+if (tabLogin) {
+  tabLogin.addEventListener("click", () => switchAuthTab("login"));
+}
+if (tabRegister) {
+  tabRegister.addEventListener("click", () => switchAuthTab("register"));
+}
+if (switchToRegister) {
+  switchToRegister.addEventListener("click", () => switchAuthTab("register"));
+}
+if (switchToLogin) {
+  switchToLogin.addEventListener("click", () => switchAuthTab("login"));
+}
+
+// Form Submissions
+if (loginForm) {
+  loginForm.addEventListener("submit", handleLogin);
+}
+if (registerForm) {
+  registerForm.addEventListener("submit", handleRegister);
+}
+
+// Logout Trigger
+if (btnLogout) {
+  btnLogout.addEventListener("click", handleLogout);
+}
+
+// ============================================================
+// 11. Application Initialization & Session Verification
+// ============================================================
+async function initApp() {
+  initDateDisplay();
+
+  const token = getAuthToken();
+  const cachedUsername = sessionStorage.getItem(USERNAME_KEY);
+
+  if (!token) {
+    updateAuthUI(false);
+    setSyncStatus("offline", "Signed Out");
+    renderTasks();
+    return;
+  }
+
+  // Restore optimistic UI display while validating session with GET /api/me
+  updateAuthUI(true, cachedUsername || "Student");
+  setSyncStatus("syncing", "Verifying session...");
+
+  try {
+    const response = await fetch(`${AUTH_ENDPOINT}/me`, {
+      method: "GET",
+      headers: {
+        "Authorization": `Bearer ${token}`
+      }
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      const verifiedUsername = data.user && data.user.username ? data.user.username : cachedUsername;
+      setAuthSession(token, verifiedUsername);
+      updateAuthUI(true, verifiedUsername);
+      await loadTasks();
+    } else {
+      // Token is expired, invalid, or user was deleted
+      clearAuthSession();
+      updateAuthUI(false);
+      setSyncStatus("offline", "Signed Out");
+      renderTasks();
+    }
+  } catch (err) {
+    console.error("Session verification failed:", err);
+    setSyncStatus("offline", "Offline");
+    // Preserve local state if offline; user can still see cached state or retry
+  }
+}
+
+// Start application
+initApp();

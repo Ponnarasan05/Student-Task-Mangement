@@ -29,6 +29,33 @@
             <span class="badge-text">Study Hub &bull; Productivity Suite</span>
           </div>
           <div class="header-meta">
+            <!-- Authentication Navigation State (Logged-out vs Logged-in demo) -->
+            <nav class="auth-nav-container" id="auth-nav-container" aria-label="Account status">
+              <!-- Logged-out state (default) -->
+              <div class="auth-logged-out" id="auth-logged-out">
+                <a href="#auth-modal" class="btn-auth-trigger" id="btn-open-login" role="button" aria-haspopup="dialog" aria-label="Sign in or register">
+                  <svg class="auth-btn-icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
+                  </svg>
+                  <span>Sign In</span>
+                </a>
+              </div>
+
+              <!-- Logged-in state (Visual preview - toggleable via .logged-in class) -->
+              <div class="auth-logged-in" id="auth-logged-in">
+                <div class="user-pill" id="user-pill" title="Demo visual state: Logged In">
+                  <span class="user-avatar-icon" aria-hidden="true">👤</span>
+                  <span class="user-display-name" id="user-display-name">Demo Student</span>
+                </div>
+                <button type="button" class="btn-logout" id="btn-logout" title="Sign out (Preview)">
+                  <svg class="logout-icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <path fill-rule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clip-rule="evenodd" />
+                  </svg>
+                  <span>Sign Out</span>
+                </button>
+              </div>
+            </nav>
+
             <span class="date-badge" id="current-date">Today's Schedule</span>
             <div class="sync-status" id="sync-status" title="Backend Status">
               <span class="status-dot"></span>
@@ -177,6 +204,146 @@
         <span class="footer-hint"><kbd>Enter</kbd> to add quickly &bull; Click card to mark as completed</span>
       </footer>
     </main>
+  </div>
+
+  <!-- ============================================================
+       Authentication Modal Overlay (Responsive & Accessible)
+       ============================================================ -->
+  <div id="auth-modal" class="auth-modal-overlay" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title">
+    <div class="auth-modal-card">
+      <!-- Close Button (anchor to # for CSS preview; interactive in Phase 6) -->
+      <a href="#" class="auth-modal-close" id="auth-modal-close" aria-label="Close dialog">&times;</a>
+
+      <div class="auth-modal-header">
+        <div class="auth-icon-badge">🎓</div>
+        <h2 class="auth-modal-title" id="auth-modal-title">Student Portal</h2>
+        <p class="auth-modal-subtitle" id="auth-modal-subtitle">
+          Sign in or create an account to manage your personal tasks.
+        </p>
+      </div>
+
+      <!-- Mode Toggle Tabs (Tablist) -->
+      <div class="auth-tabs" role="tablist" aria-label="Sign In or Registration">
+        <button type="button" class="auth-tab active" id="tab-login" role="tab" aria-selected="true" aria-controls="login-panel" data-mode="login">
+          Sign In
+        </button>
+        <button type="button" class="auth-tab" id="tab-register" role="tab" aria-selected="false" aria-controls="register-panel" data-mode="register">
+          Register
+        </button>
+      </div>
+
+      <!-- Sign In Form Panel -->
+      <div id="login-panel" role="tabpanel" aria-labelledby="tab-login" class="auth-panel active">
+        <form id="login-form" class="auth-form" autocomplete="on">
+          <div class="form-field">
+            <label for="login-username" class="field-label">Username</label>
+            <div class="auth-input-wrap">
+              <svg class="field-icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path d="M10 8a3 3 0 100-6 3 3 0 000 6zM3.465 14.493a1.23 1.23 0 00.41 1.412A9.957 9.957 0 0010 18c2.31 0 4.438-.784 6.131-2.1.43-.333.604-.903.408-1.41a7.002 7.002 0 00-13.074.003z" />
+              </svg>
+              <input 
+                type="text" 
+                id="login-username" 
+                name="username" 
+                class="auth-input" 
+                placeholder="Enter your username" 
+                autocomplete="username" 
+                required
+              >
+            </div>
+          </div>
+
+          <div class="form-field">
+            <label for="login-password" class="field-label">Password</label>
+            <div class="auth-input-wrap">
+              <svg class="field-icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path fill-rule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clip-rule="evenodd" />
+              </svg>
+              <input 
+                type="password" 
+                id="login-password" 
+                name="password" 
+                class="auth-input" 
+                placeholder="Enter your password" 
+                autocomplete="current-password" 
+                required
+              >
+            </div>
+          </div>
+
+          <div class="auth-error-banner" id="login-error-banner" role="alert" aria-live="polite" hidden></div>
+
+          <button type="submit" class="auth-submit-btn" id="login-submit-btn">
+            <span>Sign In</span>
+          </button>
+        </form>
+
+        <div class="auth-footer-prompt">
+          <span>New student?</span>
+          <button type="button" class="auth-switch-link" id="switch-to-register">Create an account</button>
+        </div>
+      </div>
+
+      <!-- Registration Form Panel -->
+      <div id="register-panel" role="tabpanel" aria-labelledby="tab-register" class="auth-panel" hidden>
+        <form id="register-form" class="auth-form" autocomplete="on">
+          <div class="form-field">
+            <label for="register-username" class="field-label">Choose Username</label>
+            <div class="auth-input-wrap">
+              <svg class="field-icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path d="M10 8a3 3 0 100-6 3 3 0 000 6zM3.465 14.493a1.23 1.23 0 00.41 1.412A9.957 9.957 0 0010 18c2.31 0 4.438-.784 6.131-2.1.43-.333.604-.903.408-1.41a7.002 7.002 0 00-13.074.003z" />
+              </svg>
+              <input 
+                type="text" 
+                id="register-username" 
+                name="username" 
+                class="auth-input" 
+                placeholder="3 to 50 characters" 
+                autocomplete="username" 
+                minlength="3" 
+                maxlength="50" 
+                required
+              >
+            </div>
+          </div>
+
+          <div class="form-field">
+            <label for="register-password" class="field-label">Create Password</label>
+            <div class="auth-input-wrap">
+              <svg class="field-icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path fill-rule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clip-rule="evenodd" />
+              </svg>
+              <input 
+                type="password" 
+                id="register-password" 
+                name="password" 
+                class="auth-input" 
+                placeholder="Minimum 6 characters" 
+                autocomplete="new-password" 
+                minlength="6" 
+                maxlength="128" 
+                required
+              >
+            </div>
+          </div>
+
+          <div class="auth-error-banner" id="register-error-banner" role="alert" aria-live="polite" hidden></div>
+
+          <button type="submit" class="auth-submit-btn" id="register-submit-btn">
+            <span>Create Account</span>
+          </button>
+        </form>
+
+        <div class="auth-footer-prompt">
+          <span>Already registered?</span>
+          <button type="button" class="auth-switch-link" id="switch-to-login">Sign in to your account</button>
+        </div>
+      </div>
+
+      <div class="auth-demo-notice">
+        <span>🔒 Phase 5 UI Preview &bull; Backend integration connects in Phase 6</span>
+      </div>
+    </div>
   </div>
 
   <!-- Non-intrusive Toast Container -->
